@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Susceptibilidad regional a movimientos en masa</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<style>
+  html, body { height: 100%; margin: 0; font-family: -apple-system, "Segoe UI", sans-serif; }
+  #map { position: absolute; top: 0; bottom: 0; left: 0; right: 0; }
+  .panel {
+    position: absolute; top: 12px; right: 12px; z-index: 1000;
+    background: #fcfcfbf0; border-radius: 10px; padding: 14px 16px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.15); font-size: 13px; color: #0b0b0b;
+    max-width: 280px;
+  }
+  .panel h1 { font-size: 15px; margin: 0 0 6px 0; }
+  .panel p { color: #52514e; font-size: 12px; margin: 4px 0 10px 0; line-height: 1.4; }
+  .legend { display: flex; align-items: center; gap: 6px; margin-top: 6px; }
+  .legend-bar {
+    width: 160px; height: 12px; border-radius: 3px;
+    background: linear-gradient(to right, #1a9850, #a6d96a, #fee08b, #f46d43, #a50026);
+  }
+  .legend-labels { display: flex; justify-content: space-between; font-size: 10px; color: #898781; width: 160px; }
+  .leaflet-control-layers { font-size: 12.5px; }
+  .attrib-note { font-size: 10.5px; color: #898781; margin-top: 8px; border-top: 1px solid #e1e0d9; padding-top: 8px; }
+</style>
+</head>
+<body>
+<div id="map"></div>
+<div class="panel">
+  <h1>Susceptibilidad a movimientos en masa</h1>
+  <p>Modelo GAM regional (17 zonas) vs. modelo RF de ISA. El contorno rojo muestra la zona donde se aplicó y validó nuestro modelo GAM -- fuera de ese contorno el mapa RF no tiene comparación disponible.</p>
+  <div class="legend-bar"></div>
+  <div class="legend-labels"><span>Bajo</span><span>Alto</span></div>
+  <div class="attrib-note">Usa el control de capas (arriba a la derecha del mapa) para alternar entre el modelo GAM, el modelo RF y el contorno de estudio.</div>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+async function iniciar() {
+  const meta = await fetch("meta.json").then(r => r.json());
+  const geojson = await fetch("zona_estudio.geojson").then(r => r.json());
+
+  const map = L.map("map", { zoomControl: true });
+
+  const base = L.tileLayer("https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png", {
+    attribution: '&copy; OpenStreetMap &copy; CARTO',
+    subdomains: "abcd", maxZoom: 19
+  }).addTo(map);
+
+  const bO = meta.bounds_ours;
+  const boundsOurs = L.latLngBounds([bO.south, bO.west], [bO.north, bO.east]);
+  const capaGAM = L.imageOverlay("susceptibilidad_gam.png", boundsOurs, { opacity: 0.9 });
+
+  const bR = meta.bounds_rf;
+  const boundsRF = L.latLngBounds([bR.south, bR.west], [bR.north, bR.east]);
+  const capaRF = L.imageOverlay("susceptibilidad_rf.png", boundsRF, { opacity: 0.85 });
+
+  const capaContorno = L.geoJSON(geojson, {
+    style: { color: "#d73027", weight: 2, fillOpacity: 0, dashArray: "4 3" }
+  });
+
+  capaGAM.addTo(map);
+  capaContorno.addTo(map);
+
+  const overlays = {
+    "Susceptibilidad -- Nuestro GAM": capaGAM,
+    "Susceptibilidad -- RF (ISA)": capaRF,
+    "Contorno zona de estudio": capaContorno
+  };
+  L.control.layers({ "Mapa base claro": base }, overlays, { collapsed: false }).addTo(map);
+
+  map.fitBounds(boundsOurs);
+}
+iniciar();
+</script>
+</body>
+</html>

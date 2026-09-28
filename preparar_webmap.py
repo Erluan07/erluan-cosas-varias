@@ -63,11 +63,16 @@ def guardar_png_overlay(arr, vmax, out_png):
 
 
 print("=== 1. NUESTRO mapa -> EPSG:4326 ===", flush=True)
-arr_ours, bounds_ours = leer_diezmado_4326(OURS, max_dim=7000, vmax=0.85)
+# nearest: OURS es una capa dispersa/lineal (corredores) sobre un fondo casi
+# todo NaN -- "average" puede mezclar mal celdas validas con vecinos NaN al
+# diezmar tanto; nearest conserva el valor real de la linea sin sesgo
+arr_ours, bounds_ours = leer_diezmado_4326(OURS, max_dim=7000, vmax=0.85, resampling=Res.nearest)
+print(f"  rango de valores: min={np.nanmin(arr_ours):.4f} media={np.nanmean(arr_ours):.4f} max={np.nanmax(arr_ours):.4f}", flush=True)
 guardar_png_overlay(arr_ours, 0.85, f"{OUTDIR}/susceptibilidad_gam.png")
 
 print("=== 2. RF -> EPSG:4326 ===", flush=True)
-arr_rf, bounds_rf = leer_diezmado_4326(RF, max_dim=3500, vmax=0.85)
+arr_rf, bounds_rf = leer_diezmado_4326(RF, max_dim=3500, vmax=0.85, resampling=Res.average)
+print(f"  rango de valores: min={np.nanmin(arr_rf):.4f} media={np.nanmean(arr_rf):.4f} max={np.nanmax(arr_rf):.4f}", flush=True)
 guardar_png_overlay(arr_rf, 0.85, f"{OUTDIR}/susceptibilidad_rf.png")
 
 print("=== 3. Contorno de la zona de estudio (union de poligonos de geologia) ===", flush=True)

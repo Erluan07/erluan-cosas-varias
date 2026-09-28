@@ -49,13 +49,15 @@ async function iniciar() {
     maxZoom: 19
   }).addTo(map);
 
+  const VERSION = "2"; // subir este numero cada vez que se regeneren los PNG, para evitar cache del navegador/CDN
+
   const bO = meta.bounds_ours;
   const boundsOurs = L.latLngBounds([bO.south, bO.west], [bO.north, bO.east]);
-  const capaGAM = L.imageOverlay("susceptibilidad_gam.png", boundsOurs, { opacity: 0.9 });
+  const capaGAM = L.imageOverlay("susceptibilidad_gam.png?v=" + VERSION, boundsOurs, { opacity: 0.9 });
 
   const bR = meta.bounds_rf;
   const boundsRF = L.latLngBounds([bR.south, bR.west], [bR.north, bR.east]);
-  const capaRF = L.imageOverlay("susceptibilidad_rf.png", boundsRF, { opacity: 0.85 });
+  const capaRF = L.imageOverlay("susceptibilidad_rf.png?v=" + VERSION, boundsRF, { opacity: 0.85 });
 
   const capaContorno = L.geoJSON(geojson, {
     style: { color: "#d73027", weight: 2, fillOpacity: 0, dashArray: "4 3" }

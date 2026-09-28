@@ -30,7 +30,7 @@
 <div id="map"></div>
 <div class="panel">
   <h1>Susceptibilidad a movimientos en masa</h1>
-  <p>Modelo GAM regional (17 zonas) vs. modelo RF de ISA. El contorno rojo muestra la zona donde se aplicó y validó nuestro modelo GAM -- fuera de ese contorno el mapa RF no tiene comparación disponible.</p>
+  <p>Modelo GAM regional (17 zonas) vs. modelo RF de ISA. El contorno azul punteado muestra la zona donde se aplicó y validó nuestro modelo GAM -- fuera de ese contorno el mapa RF no tiene comparación disponible. Activa la capa "Nuestro GAM" en el control de capas para ver el detalle de esa zona.</p>
   <div class="legend-bar"></div>
   <div class="legend-labels"><span>Bajo</span><span>Alto</span></div>
   <div class="attrib-note">Usa el control de capas (arriba a la derecha del mapa) para alternar entre el modelo GAM, el modelo RF y el contorno de estudio.</div>
@@ -59,21 +59,25 @@ async function iniciar() {
   const boundsRF = L.latLngBounds([bR.south, bR.west], [bR.north, bR.east]);
   const capaRF = L.imageOverlay("susceptibilidad_rf.png?v=" + VERSION, boundsRF, { opacity: 0.85 });
 
+  // azul, no rojo: la rampa verde-amarillo-rojo ya usa rojo para "alto", asi
+  // que un contorno rojo se confunde con el propio dato a poco zoom
   const capaContorno = L.geoJSON(geojson, {
-    style: { color: "#d73027", weight: 2, fillOpacity: 0, dashArray: "4 3" }
+    style: { color: "#1c3fa8", weight: 2.5, fillOpacity: 0, dashArray: "6 4" }
   });
 
-  capaGAM.addTo(map);
+  // por defecto: RF + contorno, para dar contexto de donde esta nuestra zona
+  // dentro del area mucho mas grande que cubre RF (pedido explicito del usuario)
+  capaRF.addTo(map);
   capaContorno.addTo(map);
 
   const overlays = {
-    "Susceptibilidad -- Nuestro GAM": capaGAM,
     "Susceptibilidad -- RF (ISA)": capaRF,
+    "Susceptibilidad -- Nuestro GAM": capaGAM,
     "Contorno zona de estudio": capaContorno
   };
   L.control.layers({ "Mapa base claro": base }, overlays, { collapsed: false }).addTo(map);
 
-  map.fitBounds(boundsOurs);
+  map.fitBounds(boundsRF);
 }
 iniciar();
 </script>

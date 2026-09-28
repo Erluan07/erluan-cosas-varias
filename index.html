@@ -59,8 +59,13 @@ async function iniciar() {
   // pixel a pixel) -- sirve de fondo de relieve bajo las capas de color
   const capaHillshade = L.imageOverlay("hillshade.png?v=" + VERSION, boundsOurs, { opacity: 1.0 });
 
-  const capaGAM = L.imageOverlay("susceptibilidad_gam.png?v=" + VERSION, boundsOurs,
-    { opacity: 0.75, className: "capa-color" });
+  // piramide de teselas (zoom 6-14) en vez de una sola imagen plana -- asi
+  // se ve el detalle real al hacer zoom, no una version diezmada borrosa
+  const capaGAM = L.tileLayer("tiles_gam/{z}/{x}/{y}.png?v=" + VERSION, {
+    minZoom: 4, maxZoom: 18, maxNativeZoom: 14, minNativeZoom: 6,
+    opacity: 0.85, className: "capa-color",
+    attribution: "Susceptibilidad GAM regional"
+  });
 
   const bR = meta.bounds_rf;
   const boundsRF = L.latLngBounds([bR.south, bR.west], [bR.north, bR.east]);

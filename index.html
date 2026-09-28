@@ -24,6 +24,7 @@
   .legend-labels { display: flex; justify-content: space-between; font-size: 10px; color: #898781; width: 160px; }
   .leaflet-control-layers { font-size: 12.5px; }
   .attrib-note { font-size: 10.5px; color: #898781; margin-top: 8px; border-top: 1px solid #e1e0d9; padding-top: 8px; }
+  .capa-color { mix-blend-mode: multiply; }
 </style>
 </head>
 <body>
@@ -33,7 +34,7 @@
   <p>Modelo GAM regional (17 zonas) vs. modelo RF de ISA. El contorno azul punteado muestra la zona donde se aplicó y validó nuestro modelo GAM -- fuera de ese contorno el mapa RF no tiene comparación disponible. Activa la capa "Nuestro GAM" en el control de capas para ver el detalle de esa zona.</p>
   <div class="legend-bar"></div>
   <div class="legend-labels"><span>Bajo</span><span>Alto</span></div>
-  <div class="attrib-note">Usa el control de capas (arriba a la derecha del mapa) para alternar entre el modelo GAM, el modelo RF y el contorno de estudio.</div>
+  <div class="attrib-note">Usa el control de capas (arriba a la derecha del mapa) para alternar entre el modelo GAM, el modelo RF, el relieve (hillshade, calculado de pendiente/aspecto) y el contorno de estudio.</div>
 </div>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -49,15 +50,22 @@ async function iniciar() {
     maxZoom: 19
   }).addTo(map);
 
-  const VERSION = "2"; // subir este numero cada vez que se regeneren los PNG, para evitar cache del navegador/CDN
+  const VERSION = "3"; // subir este numero cada vez que se regeneren los PNG, para evitar cache del navegador/CDN
 
   const bO = meta.bounds_ours;
   const boundsOurs = L.latLngBounds([bO.south, bO.west], [bO.north, bO.east]);
-  const capaGAM = L.imageOverlay("susceptibilidad_gam.png?v=" + VERSION, boundsOurs, { opacity: 0.9 });
+
+  // hillshade calculado a partir de pendiente/aspecto (misma huella que el GAM,
+  // pixel a pixel) -- sirve de fondo de relieve bajo las capas de color
+  const capaHillshade = L.imageOverlay("hillshade.png?v=" + VERSION, boundsOurs, { opacity: 1.0 });
+
+  const capaGAM = L.imageOverlay("susceptibilidad_gam.png?v=" + VERSION, boundsOurs,
+    { opacity: 0.75, className: "capa-color" });
 
   const bR = meta.bounds_rf;
   const boundsRF = L.latLngBounds([bR.south, bR.west], [bR.north, bR.east]);
-  const capaRF = L.imageOverlay("susceptibilidad_rf.png?v=" + VERSION, boundsRF, { opacity: 0.85 });
+  const capaRF = L.imageOverlay("susceptibilidad_rf.png?v=" + VERSION, boundsRF,
+    { opacity: 0.75, className: "capa-color" });
 
   // azul, no rojo: la rampa verde-amarillo-rojo ya usa rojo para "alto", asi
   // que un contorno rojo se confunde con el propio dato a poco zoom
@@ -65,12 +73,15 @@ async function iniciar() {
     style: { color: "#1c3fa8", weight: 2.5, fillOpacity: 0, dashArray: "6 4" }
   });
 
-  // por defecto: RF + contorno, para dar contexto de donde esta nuestra zona
-  // dentro del area mucho mas grande que cubre RF (pedido explicito del usuario)
+  // por defecto: hillshade + RF + contorno, para dar contexto de donde esta
+  // nuestra zona dentro del area mucho mas grande que cubre RF (pedido
+  // explicito del usuario), con relieve real de fondo en esa zona
+  capaHillshade.addTo(map);
   capaRF.addTo(map);
   capaContorno.addTo(map);
 
   const overlays = {
+    "Relieve (hillshade)": capaHillshade,
     "Susceptibilidad -- RF (ISA)": capaRF,
     "Susceptibilidad -- Nuestro GAM": capaGAM,
     "Contorno zona de estudio": capaContorno
